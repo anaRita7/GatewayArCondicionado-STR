@@ -176,7 +176,7 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-//#include "geradores.c"
+#include "geradores.c"
 
 void DetectorPresencaTask() {
     while (1) {
@@ -191,6 +191,7 @@ void DetectorPresencaTask() {
 
 void SensorTemperaturaTask() {
 
+    int temperatura_atual = 0;
     FILE* arqdadostemperatura;
 
     while (1) {
@@ -199,6 +200,17 @@ void SensorTemperaturaTask() {
         // tempo de execucao = 20ms
         // alteracao de uma variavel que indica a temperatura do ambiente
        
+        arqdadostemperatura = fopen("DadosTemperatura.txt", "r");
+
+        if (arqdadostemperatura == NULL) {
+            printf("arquivo dos dados da temperatura não pode ser aberto... \n");
+        }
+
+        //fscanf(arqdadostemperatura, "%d", &temperatura_atual);
+
+        printf("A temperatura atual medida eh %d\n", temperatura_atual);
+        // fclose(arqdadostemperatura);
+
         vTaskDelay(250);
     }
 }
