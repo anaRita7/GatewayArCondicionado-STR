@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <time.h> // Usada para a função rand()
-
+#include <stddef.h>
 
 /* Visual studio intrinsics used so the __debugbreak() function is available
  * should an assert get hit. */
@@ -24,32 +24,39 @@ void GeradorPresenca() {
     return 0;
 }
 
-int GeradorTemperatura() {
+void GeradorTemperatura() {
 
-    int i = 0, temperatura_media[31];
+    int i = 0, MaxArray = 31, mediaTemperatura = 25, maxTemperatura = 26, minTemperatura = 24;
     FILE* arqDadosTemperatura;
+    
+    while (1) {
+        arqDadosTemperatura = fopen("DadosTemperatura.txt", "w");
 
-    arqDadosTemperatura = fopen("DadosTemperatura.txt", "wt");
-
-    for (int i = 0; i < 31; i++) {
-        if (i < 10) {
-            temperatura_media[i] = 25;
-        }
-        else if (i >= 10 && i < 20) {
-            temperatura_media[i] = 26;
-        }
-        else if (i < 31) {
-            temperatura_media[i] = 24;
+        if (arqDadosTemperatura == NULL) {
+            printf("Erro na criação do arquivo DadosTemperatura");
+            exit(1);
         }
 
-        fprintf(arqDadosTemperatura, "%d\n", temperatura_media[i]);
-        printf("%d ", temperatura_media[i]);
+        for (i = 0; i < MaxArray; i++) {
+            if (i < MaxArray / 3) {
+                fprintf(arqDadosTemperatura, "%d", mediaTemperatura);
+            }
+            else if (i >= MaxArray / 3 && i < 2 / 3 * MaxArray) {
+                fprintf(arqDadosTemperatura, "%d", maxTemperatura);
+            }
+            else if (i >= 2 / 3 * MaxArray && i < MaxArray) {
+                fprintf(arqDadosTemperatura, "%d", minTemperatura);
+            }
+        }
+
+        i = 0;
+
+        fclose(arqDadosTemperatura);
+
+        printf(" \nOs dados de temperatura do ambiente foram gerados");
+        vTaskDelay(1000000);
     }
 
-    //fclose(arqDadosTemperatura);
-    i = 0;
-    
-    printf(" \nOs dados de temperaura do ambiente foram gerados");
 }
 
 void GeradorTensao() {
@@ -63,15 +70,3 @@ void GeradorParticulas() {
 void GeradorPresencaGas() {
     return 0;
 }
-
-int main(void) {
-    
-    //GeradorPresenca();
-    GeradorTemperatura();
-    //GeradorTensao();
-    //GeradorParticulas();
-    //GeradorPresencaGas();
-
-    return 0;
-}
-/*-----------------------------------------------------------*/
