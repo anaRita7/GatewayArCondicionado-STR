@@ -176,20 +176,29 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
+//#include "geradores.c"
+
 void DetectorPresencaTask() {
     while (1) {
         printf("Sensoriando Presenca...\n");
         // Tempo de execucao = 20ms
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
+
         vTaskDelay(150);
     }
 }
 
+
 void SensorTemperaturaTask() {
+
+    FILE* arqdadostemperatura;
+
     while (1) {
-        printf("Medindo Temperatura...\n");
-        // Tempo de execucao = 20ms
-        // Alteracao de uma variavel que indica a temperatura do ambiente
+        
+        printf("Medindo a temperatura...\n");
+        // tempo de execucao = 20ms
+        // alteracao de uma variavel que indica a temperatura do ambiente
+       
         vTaskDelay(250);
     }
 }
@@ -267,7 +276,6 @@ int main(void)
      * See http://www.FreeRTOS.org/trace for more information. */
 
     vTraceEnable(TRC_START);
-
     xTaskHandle HT1;
     xTaskHandle HT2;
     xTaskHandle HT3;
