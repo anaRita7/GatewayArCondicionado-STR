@@ -218,7 +218,7 @@ void SensorTemperaturaTask() {
 }
 
 void MedidorTensaoTask() {
-    while (1) {
+   while (1) {
         printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de duas variaveis que são: 1 - Tensao Nula e 0 - Tensao diferente de zero
@@ -227,11 +227,30 @@ void MedidorTensaoTask() {
 }
 
 void SensorParticulasTask() {
+
+    int const tamanhoAmbiente = 90; // m^3
+    int const minParticula = 0.05; //  mg/m^3
+    int maxArray = 30, quantidadeParticula[30];
+    FILE* arqDadosParticula;
+
     while (1) {
         printf("Sensoriando as particulas na saida de ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de variavel que será: 1 - Muitas particulas e 0 - N de particulas normal
-        // // 50 ug/m^3 = 0.05mg/m^3 é a qunatidade de partículas de poeira que o ser humano pode respirar
+
+        /*for (int i = 0; i < maxArray; i++) {
+            fscanf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+            quantidadeParticula[i] = quantidadeParticula[i] / tamanhoAmbiente;
+
+             // 0.05mg/m^3 é a qunatidade de partículas de poeira que o ser humano pode respirar
+            if (quantidadeParticula[i] > minParticula) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }*/
+
         vTaskDelay(2000);
     }
 }
