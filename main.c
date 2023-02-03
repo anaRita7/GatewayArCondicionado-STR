@@ -176,7 +176,7 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-#include "geradores.c"
+//#include "geradores.c"
 
 void DetectorPresencaTask() {
     while (1) {
@@ -191,8 +191,8 @@ void DetectorPresencaTask() {
 
 void SensorTemperaturaTask() {
 
-    int temperatura_atual = 0;
-    FILE* arqdadostemperatura;
+    int temperatura_atual[30], maxArray = 30;
+    FILE* arqDadosTemperatura;
 
     while (1) {
         
@@ -200,16 +200,18 @@ void SensorTemperaturaTask() {
         // tempo de execucao = 20ms
         // alteracao de uma variavel que indica a temperatura do ambiente
        
-        arqdadostemperatura = fopen("DadosTemperatura.txt", "r");
+        arqDadosTemperatura = fopen("DadosTemperatura.txt", "r");
 
-        if (arqdadostemperatura == NULL) {
+        if (arqDadosTemperatura == NULL) {
             printf("arquivo dos dados da temperatura não pode ser aberto... \n");
         }
 
-        //fscanf(arqdadostemperatura, "%d", &temperatura_atual);
+        /*for (int i = 0; i < maxArray; i++) {
+            fscanf(arqDadosTemperatura, "%d ", &temperatura_atual[i]);
+            printf("A temperatura atual medida eh %d\n", temperatura_atual[i]);
+        }*/
 
-        printf("A temperatura atual medida eh %d\n", temperatura_atual);
-        // fclose(arqdadostemperatura);
+        //fclose(arqDadosTemperatura);
 
         vTaskDelay(250);
     }
@@ -229,6 +231,7 @@ void SensorParticulasTask() {
         printf("Sensoriando as particulas na saida de ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de variavel que será: 1 - Muitas particulas e 0 - N de particulas normal
+        // // 50 ug/m^3 = 0.05mg/m^3 é a qunatidade de partículas de poeira que o ser humano pode respirar
         vTaskDelay(2000);
     }
 }

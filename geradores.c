@@ -21,49 +21,58 @@
 #include "trcRecorder.h"
 
 void GeradorPresenca() {
-    return 0;
+
 }
 
 void GeradorTemperatura() {
-
-    int i = 0, MaxArray = 30, temperatura_atual = 0, mediaTemperatura = 25, maxTemperatura = 26, minTemperatura = 24;
+   
+    int maxArray = 30, mediaTemperatura = 25, maxTemperatura = 26, minTemperatura = 24, atualTemperatura[30];
     FILE* arqDadosTemperatura;
-    
-    while (1) {
-      
-        for (i = 0; i < MaxArray; i++) {
-            if (i >= 0) {
-                temperatura_atual = maxTemperatura;
-            }
-            if (i >= MaxArray/3 && i < 2/3*MaxArray) {
-                temperatura_atual = mediaTemperatura;
-            }
-            else if (i >= 2/3*MaxArray && i < MaxArray) {
-                temperatura_atual = minTemperatura;
-            }
-        }
 
         arqDadosTemperatura = fopen("DadosTemperatura.txt", "w");
 
-        if (arqDadosTemperatura == NULL) {
-            printf("Erro na criação do arquivo DadosTemperatura");
-            exit(1);
+        for (int i = 0; i < maxArray; i++) {
+            if (i >= 0 && i < maxArray / 3)
+                atualTemperatura[i] = maxTemperatura;
+            else
+                if (i >=
+                    
+                    maxArray / 3 && i < 2 * maxArray / 3)
+                    atualTemperatura[i] = mediaTemperatura;
+                else
+                    if (i >= 2 * maxArray / 3 && i < maxArray)
+                        atualTemperatura[i] = minTemperatura;
+
+            fprintf(arqDadosTemperatura, "%d ", atualTemperatura[i]);
         }
 
-        fprintf(arqDadosTemperatura, "%d ", temperatura_atual);
         fclose(arqDadosTemperatura);
-    }
-
 }
 
 void GeradorTensao() {
-    return 0;
+
 }
 
 void GeradorParticulas() {
-    return 0;
+  
+    int maxArray = 30, quantidadeParticula[30];
+    FILE* arqDadosParticula;
+    time_t t;
+
+    /* Intializes random number generator */
+    srand((unsigned)time(&t));
+
+    arqDadosParticula = fopen("DadosParticula.txt", "w");
+
+    // Geração de valores aleatórios de partículas
+    for (int i = 0; i < maxArray; i++) {
+        quantidadeParticula[i] = 1 + (rand() % 14);
+        fprintf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+    }
+
+    fclose(arqDadosParticula);
 }
 
 void GeradorPresencaGas() {
-    return 0;
+  
 }
