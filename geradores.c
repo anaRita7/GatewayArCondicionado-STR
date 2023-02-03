@@ -57,10 +57,9 @@ void GeradorParticulas() {
   
     int maxArray = 30, quantidadeParticula[30];
     FILE* arqDadosParticula;
-    time_t t;
-
+    
     /* Intializes random number generator */
-    srand((unsigned)time(&t));
+    srand(time(NULL));
 
     arqDadosParticula = fopen("DadosParticula.txt", "w");
 
