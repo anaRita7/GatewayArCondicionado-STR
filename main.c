@@ -178,7 +178,7 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-float Buffer_T[2];
+int Buffer_T[2];
 int index_i;
 SemaphoreHandle_t xMutex_T;
 FILE* arqDadoTemperatura = NULL;
