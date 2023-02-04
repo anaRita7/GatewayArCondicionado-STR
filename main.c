@@ -178,13 +178,15 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part;
+int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part, Buffer_tensao;
 int index_temp, index_pres;
-SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part;
+SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part, xMutex_tensao;
 FILE* arqDadoTemperatura = NULL;
 FILE* arqDadoPresenca = NULL;
 FILE* arqDadoGas = NULL;
 FILE* arqDadoParticulas = NULL;
+FILE* arqDadoTensaoVentoinha = NULL;
+FILE* arqDadoTensaoCompressor = NULL;
 
 void GeradorFluxoPessoas() {
     
@@ -310,11 +312,68 @@ void ModuloSensorTemperaturaTask() {
     }
 }
 
-void ModuloMedidorTensaoTask() {
+void GeradorTensao() {
+    int tensao = 220;
+
+    while (1) {
+        srand(time(NULL));
+        xSemaphoreTake(xMutex_tensao, portMAX_DELAY);
+
+        int sorteio = rand() % 11;
+
+        if (sorteio <= 8)
+            tensao = 200 + (rand() % 221);
+        else if (sorteio < 2)
+            tensao = 221 + (rand() % 240);
+        else if (sorteio < 1)
+            tensao = (rand() % 200);
+
+        arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "w");
+        fprintf(arqDadoTensaoVentoinha, "%d", tensao);
+        fclose(arqDadoTensaoVentoinha);
+
+        arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "w");
+        fprintf(arqDadoTensaoCompressor, "%d", tensao);
+        fclose(arqDadoTensaoCompressor);
+
+        xSemaphoreGive(xMutex_tensao);
+        vTaskDelay(250);
+    }
+}
+
+void ModuloMedidorTensaoTask(int *ventoinha, int *compressor) {
+
+    int sorteio, sucesso, tensao, defeito;
+
    while (1) {
-        printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
+       
+       printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
+
+        arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "r");
+        sucesso = fscanf(arqDadoTensaoVentoinha, "%d", &tensao);
+        fclose(arqDadoTensaoVentoinha);
+
+        arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "r");
+        sucesso = fscanf(arqDadoTensaoCompressor, "%d", &tensao);
+        fclose(arqDadoTensaoCompressor);
+
+        switch (tensao) {
+        case 0:
+            defeito = 0;
+            break;
+        case 1:
+            defeito = 1;
+            break;
+        default:
+            defeito = 0;
+            break;
+        }
+
+        Buffer_tensao = defeito;
+
+        xSemaphoreGive(xMutex_tensao);
         vTaskDelay(2000);
     }
 }
@@ -345,7 +404,7 @@ void GeradorParticulas() {
 
 void ModuloSensorParticulasTask() {
 
-    int sucesso, particulas;
+    int sucesso, particulas, qtde_particulas;
 
     while (1) {
 
