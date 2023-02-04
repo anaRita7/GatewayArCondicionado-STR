@@ -191,7 +191,7 @@ void GeradorFluxoPessoas() {
 
     while (1) {
         srand(time(NULL));
-        xSemaphoreTake(xMutex_temp, portMAX_DELAY);
+        xSemaphoreTake(xMutex_pres, portMAX_DELAY);
 
         int sorteio = rand() % 11;
 
@@ -206,7 +206,7 @@ void GeradorFluxoPessoas() {
         fprintf(arqDadoPresenca, "%d", fluxo);
         fclose(arqDadoPresenca);
 
-        xSemaphoreGive(xMutex_temp);
+        xSemaphoreGive(xMutex_pres);
         vTaskDelay(250);
     }
 }
@@ -224,9 +224,9 @@ void ModuloDetectorPresencaTask() {
         // Tempo de execucao = 20ms
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
 
-        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "r");
-        sucesso = fscanf(arqDadoTemperatura, "%d", &fluxo);
-        fclose(arqDadoTemperatura);
+        arqDadoPresenca = fopen("Dados/Presenca.txt", "r");
+        sucesso = fscanf(arqDadoPresenca, "%d", &fluxo);
+        fclose(arqDadoPresenca);
 
         switch (fluxo) {
         case 0:
