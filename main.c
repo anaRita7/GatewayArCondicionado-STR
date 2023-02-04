@@ -319,7 +319,7 @@ void ModuloMedidorTensaoTask() {
 
 void GeradorParticulas() {
 
-    int particulas;
+    int particulas = 4500;
 
     while (1) {
         srand(time(NULL));
@@ -343,30 +343,36 @@ void GeradorParticulas() {
 
 void ModuloSensorParticulasTask() {
 
-    int const tamanhoAmbiente = 90; // m^3
-    int const minParticula = 0.05; //  mg/m^3
-    int maxArray = 30, quantidadeParticula[30];
-    FILE* arqDadosParticula;
+    int sucesso, particulas;
 
     while (1) {
-        printf("Sensoriando as particulas na saida de ar...\n");
-        // Tempo de execucao = 20ms
-        // Alteracao de variavel que será: 1 - Muitas particulas e 0 - N de particulas normal
 
-        /*for (int i = 0; i < maxArray; i++) {
-            fscanf(arqDadosParticula, "%d ", quantidadeParticula[i]);
-            quantidadeParticula[i] = quantidadeParticula[i] / tamanhoAmbiente;
+        xSemaphoreTake(xMutex_part, portMAX_DELAY);
 
-             // 0.05mg/m^3 é a qunatidade de partículas de poeira que o ser humano pode respirar
-            if (quantidadeParticula[i] > minParticula) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
-        }*/
+        printf("Sensoriando a quantidade de partículas...\n");
+        // tempo de execucao = 20ms
+        // alteracao de uma variavel que indica a temperatura do ambiente
 
-        vTaskDelay(2000);
+        arqDadoParticulas = fopen("Dados/Particulas.txt", "r");
+        sucesso = fscanf(arqDadoParticulas, "%d", &particulas);
+        fclose(arqDadoParticulas);
+
+        switch (particulas) {
+        case 0:
+            qtde_particulas = 0;
+            break;
+        case 1:
+            qtde_particulas = 1;
+            break;
+         default:
+            qtde_particulas = 0;
+            break;
+        }
+
+        Buffer_part = qtde_particulas;
+
+        xSemaphoreGive(xMutex_part);
+        vTaskDelay(250);
     }
 }
 
