@@ -178,12 +178,12 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_temp[2], Buffer_pres[2], Buffer_part;
+int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part;
 int index_temp, index_pres;
-int temp_medida, qtde_pessoas, qtde_particulas;
-SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_part;
+SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part;
 FILE* arqDadoTemperatura = NULL;
 FILE* arqDadoPresenca = NULL;
+FILE* arqDadoGas = NULL;
 FILE* arqDadoParticulas = NULL;
 
 void GeradorFluxoPessoas() {
@@ -196,9 +196,9 @@ void GeradorFluxoPessoas() {
 
         int sorteio = rand() % 11;
 
-        if (rand <= 6)
+        if (sorteio <= 6)
             fluxo = 0;
-        else if (rand <= 8)
+        else if (sorteio <= 8)
             fluxo = 1;
         else
             fluxo = -1;
@@ -216,6 +216,7 @@ void ModuloDetectorPresencaTask() {
 
     int sucesso;
     int fluxo;
+    int qtde_pessoas;
 
     while (1) {
         
@@ -284,6 +285,7 @@ void GeradorTemperatura() {
 void ModuloSensorTemperaturaTask() {
 
     int sucesso;
+    int temp_medida;
 
     while (1) {
         
@@ -376,11 +378,50 @@ void ModuloSensorParticulasTask() {
     }
 }
 
-void ModuloSensorPresencaGasRefrigeranteTask() {
+void GeradorPresencaGas() {
+    
+    int presencaGas;
+
     while (1) {
+        srand(time(NULL));
+        xSemaphoreTake(xMutex_gas, portMAX_DELAY);
+
+        int sorteio = rand() % 11;
+
+        if (sorteio <= 9)
+            presencaGas = 0;
+        else
+            presencaGas = 1;
+
+        arqDadoGas = fopen("Dados/Gas.txt", "w");
+        fprintf(arqDadoGas, "%d", presencaGas);
+        fclose(arqDadoGas);
+
+        xSemaphoreGive(xMutex_gas);
+        vTaskDelay(2000);
+    }
+}
+
+void ModuloSensorPresencaGasRefrigeranteTask() {
+
+    int sucesso;
+    int pres_gas;
+
+    while (1) {
+
+        xSemaphoreTake(xMutex_gas, portMAX_DELAY);
+
         printf("Sensoriando presenca de gas refrigerante...\n");
         // Tempo de execucao = 20ms
         // Alteracao de variavel que será: 1 - Presenca de gas e 0 - Nao Presenca de Gas
+
+        arqDadoGas = fopen("Dados/Gas.txt", "r");
+        sucesso = fscanf(arqDadoGas, "%d", &pres_gas);
+        fclose(arqDadoGas);
+
+        Buffer_gas = pres_gas;
+
+        xSemaphoreGive(xMutex_gas);
         vTaskDelay(2000);
     }
 }
