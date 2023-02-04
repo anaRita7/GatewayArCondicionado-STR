@@ -63,6 +63,8 @@
 /* FreeRTOS+Trace includes. */
 #include "trcRecorder.h"
 
+#include <semphr.h>
+
 /* This project provides two demo applications.  A simple blinky style demo
  * application, and a more comprehensive test and demo application.  The
  * mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting is used to select between the two.
@@ -176,6 +178,11 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
+float Buffer_T[2];
+int index_i;
+SemaphoreHandle_t xMutex_T;
+FILE* arqDadoTemperatura = NULL;
+
 void ModuloDetectorPresencaTask() {
 
     while (1) {
@@ -187,30 +194,56 @@ void ModuloDetectorPresencaTask() {
     }
 }
 
+void GeradorTemperatura() {
+    
+    int temperatura = 25;
+    int variacao, sinal;
+
+    while (1) {
+        srand(time(NULL));
+        xSemaphoreTake(xMutex_T, portMAX_DELAY);
+
+        variacao = rand() % 3;
+        sinal = rand() % 2;
+
+        if (sinal)
+            temperatura = temperatura + variacao;
+        else
+            temperatura = temperatura - variacao;
+        
+        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "w");
+        fprintf(arqDadoTemperatura, "%d", temperatura);
+        fclose(arqDadoTemperatura);
+
+        xSemaphoreGive(xMutex_T);
+        vTaskDelay(250);
+    }
+}
+
 void ModuloSensorTemperaturaTask() {
 
-    int temperatura_atual[30], maxArray = 30;
-    FILE* arqDadosTemperatura;
+    int sucesso;
+    int temp_medida;
 
     while (1) {
         
+        xSemaphoreTake(xMutex_T, portMAX_DELAY);
+
         printf("Medindo a temperatura...\n");
         // tempo de execucao = 20ms
         // alteracao de uma variavel que indica a temperatura do ambiente
-       
-        arqDadosTemperatura = fopen("DadosTemperatura.txt", "r");
 
-        if (arqDadosTemperatura == NULL) {
-            printf("arquivo dos dados da temperatura não pode ser aberto... \n");
-        }
+        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "r");
+        sucesso = fscanf(arqDadoTemperatura, "%d", &temp_medida);
+        fclose(arqDadoTemperatura);
 
-        /*for (int i = 0; i < maxArray; i++) {
-            fscanf(arqDadosTemperatura, "%d ", &temperatura_atual[i]);
-            printf("A temperatura atual medida eh %d\n", temperatura_atual[i]);
-        }*/
+        if (index_i == 2)
+            index_i = 0;
+        
+        Buffer_T[index_i] = temp_medida;
+        index_i++;
 
-        //fclose(arqDadosTemperatura);
-
+        xSemaphoreGive(xMutex_T);
         vTaskDelay(250);
     }
 }
@@ -222,6 +255,25 @@ void ModuloMedidorTensaoTask() {
         // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
         vTaskDelay(2000);
     }
+}
+
+void GeradorParticulas() {
+
+    int i, maxArray = 30, quantidadeParticula[30];
+    FILE* arqDadosParticula;
+
+    /* Intializes random number generator */
+    srand(time(NULL));
+
+    arqDadosParticula = fopen("DadosParticula.txt", "w");
+
+    // Geracao de valores aleatarios de particulas
+    for (i = 0; i < maxArray; i++) {
+        quantidadeParticula[i] = 1 + (rand() % 14);
+        fprintf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+    }
+
+    fclose(arqDadosParticula);
 }
 
 void ModuloSensorParticulasTask() {
