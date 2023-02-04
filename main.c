@@ -210,7 +210,7 @@ void GeradorFluxoPessoas() {
         fclose(arqDadoPresenca);
 
         xSemaphoreGive(xMutex_pres);
-        vTaskDelay(250);
+        vTaskDelay(500);
     }
 }
 
@@ -218,7 +218,7 @@ void ModuloDetectorPresencaTask() {
 
     int sucesso;
     int fluxo;
-    int qtde_pessoas;
+    int qtde_pessoas = 0;
 
     while (1) {
         
@@ -232,7 +232,7 @@ void ModuloDetectorPresencaTask() {
         sucesso = fscanf(arqDadoPresenca, "%d", &fluxo);
         fclose(arqDadoPresenca);
 
-        qtde_pessoas = qtde_pessoas+fluxo;
+        qtde_pessoas += fluxo;
 
         if (index_pres == 2)
             index_pres = 0;
@@ -267,7 +267,7 @@ void GeradorTemperatura() {
         fclose(arqDadoTemperatura);
 
         xSemaphoreGive(xMutex_temp);
-        vTaskDelay(250);
+        vTaskDelay(600);
     }
 }
 
@@ -333,7 +333,7 @@ void GeradorTensao() {
         fclose(arqDadoTensaoCompressor);
 
         xSemaphoreGive(xMutex_tensao);
-        vTaskDelay(2000);
+        vTaskDelay(1900);
     }
 }
 
@@ -390,7 +390,7 @@ void GeradorParticulas() {
         fclose(arqDadoParticulas);
 
         xSemaphoreGive(xMutex_part);
-        vTaskDelay(2000);
+        vTaskDelay(1900);
     }
 }
 
@@ -442,7 +442,7 @@ void GeradorPresencaGas() {
         fclose(arqDadoGas);
 
         xSemaphoreGive(xMutex_gas);
-        vTaskDelay(2000);
+        vTaskDelay(1900);
     }
 }
 
