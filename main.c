@@ -180,30 +180,30 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 int Buffer_temp[2], Buffer_pres[2];
 int index_temp, index_pres;
+int temp_medida, qtde_pessoas;
 SemaphoreHandle_t xMutex_temp, xMutex_pres;
 FILE* arqDadoTemperatura = NULL;
 FILE* arqDadoPresenca = NULL;
 
 void GeradorFluxoPessoas() {
     
-    int qtde_pessoas = 0;
     int fluxo;
 
     while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_temp, portMAX_DELAY);
 
-        fluxo = rand() % 11;
+        int sorteio = rand() % 11;
 
         if (rand <= 6)
-            qtde_pessoas = qtde_pessoas;
+            fluxo = 0;
         else if (rand <= 8)
-            qtde_pessoas++;
+            fluxo = 1;
         else
-            qtde_pessoas--;
+            fluxo = -1;
 
         arqDadoPresenca = fopen("Dados/Presenca.txt", "w");
-        fprintf(arqDadoPresenca, "%d", qtde_pessoas);
+        fprintf(arqDadoPresenca, "%d", fluxo);
         fclose(arqDadoPresenca);
 
         xSemaphoreGive(xMutex_temp);
@@ -214,7 +214,7 @@ void GeradorFluxoPessoas() {
 void ModuloDetectorPresencaTask() {
 
     int sucesso;
-    int qtde_pessoas;
+    int fluxo;
 
     while (1) {
         
@@ -225,8 +225,23 @@ void ModuloDetectorPresencaTask() {
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
 
         arqDadoTemperatura = fopen("Dados/Temperatura.txt", "r");
-        sucesso = fscanf(arqDadoTemperatura, "%d", &qtde_pessoas);
+        sucesso = fscanf(arqDadoTemperatura, "%d", &fluxo);
         fclose(arqDadoTemperatura);
+
+        switch (fluxo) {
+        case 0:
+            qtde_pessoas = qtde_pessoas;
+            break;
+        case 1:
+            qtde_pessoas++;
+            break;
+        case -1:
+            qtde_pessoas--;
+            break;
+        default:
+            qtde_pessoas = qtde_pessoas;
+            break;
+        }
 
         if (index_pres == 2)
             index_pres = 0;
@@ -268,7 +283,6 @@ void GeradorTemperatura() {
 void ModuloSensorTemperaturaTask() {
 
     int sucesso;
-    int temp_medida;
 
     while (1) {
         
