@@ -178,10 +178,15 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_T[2];
-int index_i;
-SemaphoreHandle_t xMutex_T;
+int Buffer_temp[2], Buffer_pres[2];
+int index_temp, index_pres;
+SemaphoreHandle_t xMutex_temp, xMutex_pres;
 FILE* arqDadoTemperatura = NULL;
+FILE* arqDadoPresenca = NULL;
+
+void GeradorFluxoPessoas() {
+
+}
 
 void ModuloDetectorPresencaTask() {
 
@@ -201,7 +206,7 @@ void GeradorTemperatura() {
 
     while (1) {
         srand(time(NULL));
-        xSemaphoreTake(xMutex_T, portMAX_DELAY);
+        xSemaphoreTake(xMutex_temp, portMAX_DELAY);
 
         variacao = rand() % 3;
         sinal = rand() % 2;
@@ -215,7 +220,7 @@ void GeradorTemperatura() {
         fprintf(arqDadoTemperatura, "%d", temperatura);
         fclose(arqDadoTemperatura);
 
-        xSemaphoreGive(xMutex_T);
+        xSemaphoreGive(xMutex_temp);
         vTaskDelay(250);
     }
 }
@@ -227,7 +232,7 @@ void ModuloSensorTemperaturaTask() {
 
     while (1) {
         
-        xSemaphoreTake(xMutex_T, portMAX_DELAY);
+        xSemaphoreTake(xMutex_temp, portMAX_DELAY);
 
         printf("Medindo a temperatura...\n");
         // tempo de execucao = 20ms
@@ -237,13 +242,13 @@ void ModuloSensorTemperaturaTask() {
         sucesso = fscanf(arqDadoTemperatura, "%d", &temp_medida);
         fclose(arqDadoTemperatura);
 
-        if (index_i == 2)
-            index_i = 0;
+        if (index_temp == 2)
+            index_temp = 0;
         
-        Buffer_T[index_i] = temp_medida;
-        index_i++;
+        Buffer_temp[index_temp] = temp_medida;
+        index_temp++;
 
-        xSemaphoreGive(xMutex_T);
+        xSemaphoreGive(xMutex_temp);
         vTaskDelay(250);
     }
 }
