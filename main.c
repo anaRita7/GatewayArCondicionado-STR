@@ -185,16 +185,56 @@ FILE* arqDadoTemperatura = NULL;
 FILE* arqDadoPresenca = NULL;
 
 void GeradorFluxoPessoas() {
+    
+    int qtde_pessoas = 0;
+    int fluxo;
 
+    while (1) {
+        srand(time(NULL));
+        xSemaphoreTake(xMutex_temp, portMAX_DELAY);
+
+        fluxo = rand() % 11;
+
+        if (rand <= 6)
+            qtde_pessoas = qtde_pessoas;
+        else if (rand <= 8)
+            qtde_pessoas++;
+        else
+            qtde_pessoas--;
+
+        arqDadoPresenca = fopen("Dados/Presenca.txt", "w");
+        fprintf(arqDadoPresenca, "%d", qtde_pessoas);
+        fclose(arqDadoPresenca);
+
+        xSemaphoreGive(xMutex_temp);
+        vTaskDelay(250);
+    }
 }
 
 void ModuloDetectorPresencaTask() {
 
+    int sucesso;
+    int qtde_pessoas;
+
     while (1) {
+        
+        xSemaphoreTake(xMutex_pres, portMAX_DELAY);
+
         printf("Sensoriando Presenca...\n");
         // Tempo de execucao = 20ms
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
 
+        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "r");
+        sucesso = fscanf(arqDadoTemperatura, "%d", &qtde_pessoas);
+        fclose(arqDadoTemperatura);
+
+        if (index_pres == 2)
+            index_pres = 0;
+        
+        Buffer_pres[index_pres] = qtde_pessoas;
+        index_pres++;
+
+        xSemaphoreGive(xMutex_pres);
         vTaskDelay(150);
     }
 }
