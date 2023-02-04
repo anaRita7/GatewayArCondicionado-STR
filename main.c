@@ -176,7 +176,7 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-void DetectorPresencaTask() {
+void ModuloDetectorPresencaTask() {
     while (1) {
         printf("Sensoriando Presenca...\n");
         // Tempo de execucao = 20ms
@@ -185,7 +185,7 @@ void DetectorPresencaTask() {
     }
 }
 
-void SensorTemperaturaTask() {
+void ModuloSensorTemperaturaTask() {
     while (1) {
         printf("Medindo Temperatura...\n");
         // Tempo de execucao = 20ms
@@ -194,16 +194,16 @@ void SensorTemperaturaTask() {
     }
 }
 
-void MedidorTensaoTask() {
+void ModuloMedidorTensaoTask() {
     while (1) {
         printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
         // Tempo de execucao = 20ms
-        // Alteracao de duas variaveis que são: 1 - Tensao Nula e 0 - Tensao diferente de zero
+        // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
         vTaskDelay(2000);
     }
 }
 
-void SensorParticulasTask() {
+void ModuloSensorParticulasTask() {
     while (1) {
         printf("Sensoriando as particulas na saida de ar...\n");
         // Tempo de execucao = 20ms
@@ -212,7 +212,7 @@ void SensorParticulasTask() {
     }
 }
 
-void SensorPresencaGasRefrigeranteTask() {
+void ModuloSensorPresencaGasRefrigeranteTask() {
     while (1) {
         printf("Sensoriando presenca de gas refrigerante...\n");
         // Tempo de execucao = 20ms
@@ -275,11 +275,11 @@ int main(void)
     xTaskHandle HT5;
 
     /* create task */
-    xTaskCreate(DetectorPresencaTask, (signed char*)"DetectorPresencaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 5, &HT1);
-    xTaskCreate(SensorTemperaturaTask, (signed char*)"SensorTemperaturaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 4, &HT2);
-    xTaskCreate(MedidorTensaoTask, (signed char*)"MedidorTensaoTask", configMINIMAL_STACK_SIZE, (void*)NULL, 3, &HT3);
-    xTaskCreate(SensorParticulasTask, (signed char*)"SensorParticulasTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT4);
-    xTaskCreate(SensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT5);
+    xTaskCreate(ModuloDetectorPresencaTask, (signed char*)"DetectorPresencaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 5, &HT1);
+    xTaskCreate(ModuloSensorTemperaturaTask, (signed char*)"SensorTemperaturaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 4, &HT2);
+    xTaskCreate(ModuloMedidorTensaoTask, (signed char*)"MedidorTensaoTask", configMINIMAL_STACK_SIZE, (void*)NULL, 3, &HT3);
+    xTaskCreate(ModuloSensorParticulasTask, (signed char*)"SensorParticulasTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT4);
+    xTaskCreate(ModuloSensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT5);
 
     // Ver questão do Deferrable Server para tarefas aperiódicas
 
