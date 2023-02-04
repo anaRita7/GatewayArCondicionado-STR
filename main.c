@@ -327,9 +327,9 @@ void GeradorParticulas() {
 
         int sorteio = rand() % 11;
 
-        if (rand <= 9)
+        if (sorteio <= 9)
             particulas = 3000 + (rand() % 4500);
-        else if (rand < 1)
+        else if (sorteio < 1)
             particulas = 45001 + (rand() % 6000);
 
         arqDadoParticulas = fopen("Dados/Particulas.txt", "w");
