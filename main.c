@@ -178,7 +178,7 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part, Buffer_tensao;
+int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part, Buffer_tensao_vento, Buffer_tensao_comp;
 int index_temp, index_pres;
 SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part, xMutex_tensao;
 FILE* arqDadoTemperatura = NULL;
@@ -232,20 +232,7 @@ void ModuloDetectorPresencaTask() {
         sucesso = fscanf(arqDadoPresenca, "%d", &fluxo);
         fclose(arqDadoPresenca);
 
-        switch (fluxo) {
-        case 0:
-            qtde_pessoas = qtde_pessoas;
-            break;
-        case 1:
-            qtde_pessoas++;
-            break;
-        case -1:
-            qtde_pessoas--;
-            break;
-        default:
-            qtde_pessoas = qtde_pessoas;
-            break;
-        }
+        qtde_pessoas = qtde_pessoas+fluxo;
 
         if (index_pres == 2)
             index_pres = 0;
@@ -313,37 +300,46 @@ void ModuloSensorTemperaturaTask() {
 }
 
 void GeradorTensao() {
-    int tensao = 220;
+    int tensao_vento = 220;
+    int tensao_comp = 220;
 
     while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_tensao, portMAX_DELAY);
 
-        int sorteio = rand() % 11;
+        int sort1 = rand() % 11;
+        int sort2 = rand() % 11;
 
-        if (sorteio <= 8)
-            tensao = 200 + (rand() % 221);
-        else if (sorteio < 2)
-            tensao = 221 + (rand() % 240);
-        else if (sorteio < 1)
-            tensao = (rand() % 200);
+        if (sort1 < 1)
+            tensao_vento = (rand() % 200);
+        else if (sort1 < 2)
+            tensao_vento = 221 + (rand() % 40);
+        else if (sort1 <= 8)
+            tensao_vento = 200 + (rand() % 21);
+
+        if (sort2 < 1)
+            tensao_comp = (rand() % 200);
+        else if (sort2 < 2)
+            tensao_comp = 221 + (rand() % 40);
+        else if (sort2 <= 8)
+            tensao_comp = 200 + (rand() % 21);
 
         arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "w");
-        fprintf(arqDadoTensaoVentoinha, "%d", tensao);
+        fprintf(arqDadoTensaoVentoinha, "%d", tensao_vento);
         fclose(arqDadoTensaoVentoinha);
 
         arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "w");
-        fprintf(arqDadoTensaoCompressor, "%d", tensao);
+        fprintf(arqDadoTensaoCompressor, "%d", tensao_comp);
         fclose(arqDadoTensaoCompressor);
 
         xSemaphoreGive(xMutex_tensao);
-        vTaskDelay(250);
+        vTaskDelay(2000);
     }
 }
 
-void ModuloMedidorTensaoTask(int *ventoinha, int *compressor) {
+void ModuloMedidorTensaoTask() {
 
-    int sorteio, sucesso, tensao, defeito;
+    int tensoes[2], sucessos[2], defeitos[2];
 
    while (1) {
        
@@ -352,26 +348,22 @@ void ModuloMedidorTensaoTask(int *ventoinha, int *compressor) {
         // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
 
         arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "r");
-        sucesso = fscanf(arqDadoTensaoVentoinha, "%d", &tensao);
+        sucessos[0] = fscanf(arqDadoTensaoVentoinha, "%d", &tensoes[0]);
         fclose(arqDadoTensaoVentoinha);
 
         arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "r");
-        sucesso = fscanf(arqDadoTensaoCompressor, "%d", &tensao);
+        sucessos[1] = fscanf(arqDadoTensaoCompressor, "%d", &tensoes[1]);
         fclose(arqDadoTensaoCompressor);
 
-        switch (tensao) {
-        case 0:
-            defeito = 0;
-            break;
-        case 1:
-            defeito = 1;
-            break;
-        default:
-            defeito = 0;
-            break;
+        for (int i = 0; i < 2; i++) {
+            if (tensoes[i] < 200)
+                defeitos[i] = 1;
+            else
+                defeitos[i] = 0;
         }
 
-        Buffer_tensao = defeito;
+        Buffer_tensao_vento = defeitos[0];
+        Buffer_tensao_comp = defeitos[1];
 
         xSemaphoreGive(xMutex_tensao);
         vTaskDelay(2000);
@@ -389,22 +381,22 @@ void GeradorParticulas() {
         int sorteio = rand() % 11;
 
         if (sorteio <= 9)
-            particulas = 3000 + (rand() % 4500);
-        else if (sorteio < 1)
-            particulas = 45001 + (rand() % 6000);
+            particulas = 3000 + (rand() % 1500);
+        else
+            particulas = 4501 + (rand() % 1500);
 
         arqDadoParticulas = fopen("Dados/Particulas.txt", "w");
         fprintf(arqDadoParticulas, "%d", particulas);
         fclose(arqDadoParticulas);
 
         xSemaphoreGive(xMutex_part);
-        vTaskDelay(250);
+        vTaskDelay(2000);
     }
 }
 
 void ModuloSensorParticulasTask() {
 
-    int sucesso, particulas, qtde_particulas;
+    int sucesso, particulas, defeito;
 
     while (1) {
 
@@ -412,28 +404,21 @@ void ModuloSensorParticulasTask() {
 
         printf("Sensoriando a quantidade de partículas...\n");
         // tempo de execucao = 20ms
-        // alteracao de uma variavel que indica a temperatura do ambiente
+        // Alteracao de variavel que será: 1 - Defeito na autolimpeza e 0 - Nao Defeito
 
         arqDadoParticulas = fopen("Dados/Particulas.txt", "r");
         sucesso = fscanf(arqDadoParticulas, "%d", &particulas);
         fclose(arqDadoParticulas);
 
-        switch (particulas) {
-        case 0:
-            qtde_particulas = 0;
-            break;
-        case 1:
-            qtde_particulas = 1;
-            break;
-         default:
-            qtde_particulas = 0;
-            break;
-        }
+        if (particulas <= 4500)
+            defeito = 0;
+        else
+            defeito = 1;
 
-        Buffer_part = qtde_particulas;
+        Buffer_part = defeito;
 
         xSemaphoreGive(xMutex_part);
-        vTaskDelay(250);
+        vTaskDelay(2000);
     }
 }
 
