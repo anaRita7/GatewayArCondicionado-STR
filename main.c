@@ -178,12 +178,13 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_temp[2], Buffer_pres[2];
+int Buffer_temp[2], Buffer_pres[2], Buffer_part;
 int index_temp, index_pres;
-int temp_medida, qtde_pessoas;
-SemaphoreHandle_t xMutex_temp, xMutex_pres;
+int temp_medida, qtde_pessoas, qtde_particulas;
+SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_part;
 FILE* arqDadoTemperatura = NULL;
 FILE* arqDadoPresenca = NULL;
+FILE* arqDadoParticulas = NULL;
 
 void GeradorFluxoPessoas() {
     
@@ -318,21 +319,26 @@ void ModuloMedidorTensaoTask() {
 
 void GeradorParticulas() {
 
-    int i, maxArray = 30, quantidadeParticula[30];
-    FILE* arqDadosParticula;
+    int particulas;
 
-    /* Intializes random number generator */
-    srand(time(NULL));
+    while (1) {
+        srand(time(NULL));
+        xSemaphoreTake(xMutex_part, portMAX_DELAY);
 
-    arqDadosParticula = fopen("DadosParticula.txt", "w");
+        int sorteio = rand() % 11;
 
-    // Geracao de valores aleatarios de particulas
-    for (i = 0; i < maxArray; i++) {
-        quantidadeParticula[i] = 1 + (rand() % 14);
-        fprintf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+        if (rand <= 9)
+            particulas = 3000 + (rand() % 4500);
+        else if (rand < 1)
+            particulas = 45001 + (rand() % 6000);
+
+        arqDadoParticulas = fopen("Dados/Particulas.txt", "w");
+        fprintf(arqDadoParticulas, "%d", particulas);
+        fclose(arqDadoParticulas);
+
+        xSemaphoreGive(xMutex_part);
+        vTaskDelay(250);
     }
-
-    fclose(arqDadosParticula);
 }
 
 void ModuloSensorParticulasTask() {
