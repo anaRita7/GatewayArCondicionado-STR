@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <time.h> // Usada para a função rand()
-
+#include <stddef.h>
 
 /* Visual studio intrinsics used so the __debugbreak() function is available
  * should an assert get hit. */
@@ -21,57 +21,57 @@
 #include "trcRecorder.h"
 
 void GeradorPresenca() {
-    return 0;
+
 }
 
-int GeradorTemperatura() {
-
-    int i = 0, temperatura_media[31];
+void GeradorTemperatura() {
+   
+    int maxArray = 30, mediaTemperatura = 25, maxTemperatura = 26, minTemperatura = 24, atualTemperatura[30];
     FILE* arqDadosTemperatura;
 
-    arqDadosTemperatura = fopen("DadosTemperatura.txt", "wt");
+        arqDadosTemperatura = fopen("DadosTemperatura.txt", "w");
 
-    for (int i = 0; i < 31; i++) {
-        if (i < 10) {
-            temperatura_media[i] = 25;
-        }
-        else if (i >= 10 && i < 20) {
-            temperatura_media[i] = 26;
-        }
-        else if (i < 31) {
-            temperatura_media[i] = 24;
+        for (int i = 0; i < maxArray; i++) {
+            if (i >= 0 && i < maxArray / 3)
+                atualTemperatura[i] = maxTemperatura;
+            else
+                if (i >=
+                    
+                    maxArray / 3 && i < 2 * maxArray / 3)
+                    atualTemperatura[i] = mediaTemperatura;
+                else
+                    if (i >= 2 * maxArray / 3 && i < maxArray)
+                        atualTemperatura[i] = minTemperatura;
+
+            fprintf(arqDadosTemperatura, "%d ", atualTemperatura[i]);
         }
 
-        fprintf(arqDadosTemperatura, "%d\n", temperatura_media[i]);
-        printf("%d ", temperatura_media[i]);
-    }
-
-    //fclose(arqDadosTemperatura);
-    i = 0;
-    
-    printf(" \nOs dados de temperaura do ambiente foram gerados");
+        fclose(arqDadosTemperatura);
 }
 
 void GeradorTensao() {
-    return 0;
+
 }
 
 void GeradorParticulas() {
-    return 0;
+  
+    int maxArray = 30, quantidadeParticula[30];
+    FILE* arqDadosParticula;
+    
+    /* Intializes random number generator */
+    srand(time(NULL));
+
+    arqDadosParticula = fopen("DadosParticula.txt", "w");
+
+    // Geração de valores aleatórios de partículas
+    for (int i = 0; i < maxArray; i++) {
+        quantidadeParticula[i] = 1 + (rand() % 14);
+        fprintf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+    }
+
+    fclose(arqDadosParticula);
 }
 
 void GeradorPresencaGas() {
-    return 0;
+  
 }
-
-int main(void) {
-    
-    //GeradorPresenca();
-    GeradorTemperatura();
-    //GeradorTensao();
-    //GeradorParticulas();
-    //GeradorPresencaGas();
-
-    return 0;
-}
-/*-----------------------------------------------------------*/

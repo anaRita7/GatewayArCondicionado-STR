@@ -177,25 +177,46 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 /*-----------------------------------------------------------*/
 
 void ModuloDetectorPresencaTask() {
+
     while (1) {
         printf("Sensoriando Presenca...\n");
         // Tempo de execucao = 20ms
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
+
         vTaskDelay(150);
     }
 }
 
 void ModuloSensorTemperaturaTask() {
+
+    int temperatura_atual[30], maxArray = 30;
+    FILE* arqDadosTemperatura;
+
     while (1) {
-        printf("Medindo Temperatura...\n");
-        // Tempo de execucao = 20ms
-        // Alteracao de uma variavel que indica a temperatura do ambiente
+        
+        printf("Medindo a temperatura...\n");
+        // tempo de execucao = 20ms
+        // alteracao de uma variavel que indica a temperatura do ambiente
+       
+        arqDadosTemperatura = fopen("DadosTemperatura.txt", "r");
+
+        if (arqDadosTemperatura == NULL) {
+            printf("arquivo dos dados da temperatura não pode ser aberto... \n");
+        }
+
+        /*for (int i = 0; i < maxArray; i++) {
+            fscanf(arqDadosTemperatura, "%d ", &temperatura_atual[i]);
+            printf("A temperatura atual medida eh %d\n", temperatura_atual[i]);
+        }*/
+
+        //fclose(arqDadosTemperatura);
+
         vTaskDelay(250);
     }
 }
 
 void ModuloMedidorTensaoTask() {
-    while (1) {
+   while (1) {
         printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
@@ -204,10 +225,30 @@ void ModuloMedidorTensaoTask() {
 }
 
 void ModuloSensorParticulasTask() {
+
+    int const tamanhoAmbiente = 90; // m^3
+    int const minParticula = 0.05; //  mg/m^3
+    int maxArray = 30, quantidadeParticula[30];
+    FILE* arqDadosParticula;
+
     while (1) {
         printf("Sensoriando as particulas na saida de ar...\n");
         // Tempo de execucao = 20ms
         // Alteracao de variavel que será: 1 - Muitas particulas e 0 - N de particulas normal
+
+        /*for (int i = 0; i < maxArray; i++) {
+            fscanf(arqDadosParticula, "%d ", quantidadeParticula[i]);
+            quantidadeParticula[i] = quantidadeParticula[i] / tamanhoAmbiente;
+
+             // 0.05mg/m^3 é a qunatidade de partículas de poeira que o ser humano pode respirar
+            if (quantidadeParticula[i] > minParticula) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }*/
+
         vTaskDelay(2000);
     }
 }
@@ -267,7 +308,6 @@ int main(void)
      * See http://www.FreeRTOS.org/trace for more information. */
 
     vTraceEnable(TRC_START);
-
     xTaskHandle HT1;
     xTaskHandle HT2;
     xTaskHandle HT3;
