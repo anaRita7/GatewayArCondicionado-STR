@@ -188,11 +188,14 @@ FILE* arqDadoParticulas = NULL;
 FILE* arqDadoTensaoVentoinha = NULL;
 FILE* arqDadoTensaoCompressor = NULL;
 
-void GeradorFluxoPessoas() {
-    
-    int fluxo;
+int cont = 0, fluxo;
+int temp_medida;
+int tensoes[2] = { 220, 220 };
+int particulas = 4500;
+int presencaGas;
 
-    while (1) {
+void GeradorFluxoPessoas() {
+
         srand(time(NULL));
         xSemaphoreTake(xMutex_pres, portMAX_DELAY);
 
@@ -200,37 +203,33 @@ void GeradorFluxoPessoas() {
 
         if (sorteio <= 6)
             fluxo = 0;
-        else if (sorteio <= 8)
+        else if (sorteio <= 8) {
             fluxo = 1;
-        else
+            cont++;
+        }
+        else if (cont > 0) {
             fluxo = -1;
-
-        arqDadoPresenca = fopen("Dados/Presenca.txt", "w");
-        fprintf(arqDadoPresenca, "%d", fluxo);
-        fclose(arqDadoPresenca);
+            cont--;
+        }
+        else
+            fluxo = 0;
 
         xSemaphoreGive(xMutex_pres);
-        vTaskDelay(500);
-    }
 }
 
 void ModuloDetectorPresencaTask() {
 
-    int sucesso;
-    int fluxo;
     int qtde_pessoas = 0;
 
     while (1) {
         
+        xTaskHandle GP;
+        xTaskCreate(GeradorFluxoPessoas, (signed char*)"Gerador de Fluxo", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &GP);
+
         xSemaphoreTake(xMutex_pres, portMAX_DELAY);
 
         printf("Sensoriando Presenca...\n");
-        // Tempo de execucao = 20ms
         // Alteracao de uma variavel que indica o numero de pessoas no ambiente
-
-        arqDadoPresenca = fopen("Dados/Presenca.txt", "r");
-        sucesso = fscanf(arqDadoPresenca, "%d", &fluxo);
-        fclose(arqDadoPresenca);
 
         qtde_pessoas += fluxo;
 
@@ -239,6 +238,8 @@ void ModuloDetectorPresencaTask() {
         
         Buffer_pres[index_pres] = qtde_pessoas;
         index_pres++;
+
+        printf("Quantidade de pessoas no comodo: %d\n\n", qtde_pessoas);
 
         xSemaphoreGive(xMutex_pres);
         vTaskDelay(150);
@@ -250,7 +251,6 @@ void GeradorTemperatura() {
     int temperatura = 25;
     int variacao, sinal;
 
-    while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_temp, portMAX_DELAY);
 
@@ -258,35 +258,24 @@ void GeradorTemperatura() {
         sinal = rand() % 2;
 
         if (sinal)
-            temperatura = temperatura + variacao;
+            temp_medida = temperatura + variacao;
         else
-            temperatura = temperatura - variacao;
-        
-        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "w");
-        fprintf(arqDadoTemperatura, "%d", temperatura);
-        fclose(arqDadoTemperatura);
+            temp_medida = temperatura - variacao;
 
         xSemaphoreGive(xMutex_temp);
-        vTaskDelay(600);
-    }
 }
 
 void ModuloSensorTemperaturaTask() {
 
-    int sucesso;
-    int temp_medida;
-
     while (1) {
         
+        xTaskHandle GT;
+        xTaskCreate(GeradorTemperatura, (signed char*)"Gerador de Temperatura", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &GT);
+
         xSemaphoreTake(xMutex_temp, portMAX_DELAY);
 
         printf("Medindo a temperatura...\n");
-        // tempo de execucao = 20ms
         // alteracao de uma variavel que indica a temperatura do ambiente
-
-        arqDadoTemperatura = fopen("Dados/Temperatura.txt", "r");
-        sucesso = fscanf(arqDadoTemperatura, "%d", &temp_medida);
-        fclose(arqDadoTemperatura);
 
         if (index_temp == 2)
             index_temp = 0;
@@ -294,66 +283,51 @@ void ModuloSensorTemperaturaTask() {
         Buffer_temp[index_temp] = temp_medida;
         index_temp++;
 
+        printf("Temperatura Medida: %d\n\n", temp_medida);
+
         xSemaphoreGive(xMutex_temp);
         vTaskDelay(250);
     }
 }
 
 void GeradorTensao() {
-    int tensao_vento = 220;
-    int tensao_comp = 220;
 
-    while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_tensao, portMAX_DELAY);
 
         int sort1 = rand() % 11;
-        int sort2 = rand() % 11;
+        int sort2 = rand() % 46;
 
         if (sort1 < 1)
-            tensao_vento = (rand() % 200);
+            tensoes[0] = (rand() % 200);
         else if (sort1 < 2)
-            tensao_vento = 221 + (rand() % 40);
-        else if (sort1 <= 8)
-            tensao_vento = 200 + (rand() % 21);
+            tensoes[0] = 221 + (rand() % 40);
+        else
+            tensoes[0] = 200 + (rand() % 21);
 
-        if (sort2 < 1)
-            tensao_comp = (rand() % 200);
-        else if (sort2 < 2)
-            tensao_comp = 221 + (rand() % 40);
-        else if (sort2 <= 8)
-            tensao_comp = 200 + (rand() % 21);
-
-        arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "w");
-        fprintf(arqDadoTensaoVentoinha, "%d", tensao_vento);
-        fclose(arqDadoTensaoVentoinha);
-
-        arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "w");
-        fprintf(arqDadoTensaoCompressor, "%d", tensao_comp);
-        fclose(arqDadoTensaoCompressor);
+        if (sort2 < 5)
+            tensoes[1] = (rand() % 200);
+        else if (sort2 < 10)
+            tensoes[1] = 221 + (rand() % 40);
+        else
+            tensoes[1] = 200 + (rand() % 21);
 
         xSemaphoreGive(xMutex_tensao);
-        vTaskDelay(1900);
-    }
 }
 
 void ModuloMedidorTensaoTask() {
 
-    int tensoes[2], sucessos[2], defeitos[2];
+   int defeitos[2];
 
    while (1) {
        
+       xTaskHandle GTs;
+       xTaskCreate(GeradorTensao, (signed char*)"Gerador de Tensoes", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &GTs);
+
+       xSemaphoreTake(xMutex_tensao, portMAX_DELAY);
+
        printf("Medindo a Tensao da Ventoinha e do Compressor de Ar...\n");
-        // Tempo de execucao = 20ms
         // Alteracao de duas variaveis que são: 1 - Tensao de Defeito e 0 - Tensao diferente de defeito
-
-        arqDadoTensaoVentoinha = fopen("Dados/TensaoVentoinha.txt", "r");
-        sucessos[0] = fscanf(arqDadoTensaoVentoinha, "%d", &tensoes[0]);
-        fclose(arqDadoTensaoVentoinha);
-
-        arqDadoTensaoCompressor = fopen("Dados/TensaoCompressor.txt", "r");
-        sucessos[1] = fscanf(arqDadoTensaoCompressor, "%d", &tensoes[1]);
-        fclose(arqDadoTensaoCompressor);
 
         for (int i = 0; i < 2; i++) {
             if (tensoes[i] < 200)
@@ -365,6 +339,9 @@ void ModuloMedidorTensaoTask() {
         Buffer_tensao_vento = defeitos[0];
         Buffer_tensao_comp = defeitos[1];
 
+        printf("Tensao no Ventoinha: %d Defeito: %d\n", tensoes[0], defeitos[0]);
+        printf("Tensao no Compressor: %d Defeito: %d\n\n", tensoes[1], defeitos[1]);
+
         xSemaphoreGive(xMutex_tensao);
         vTaskDelay(2000);
     }
@@ -372,9 +349,6 @@ void ModuloMedidorTensaoTask() {
 
 void GeradorParticulas() {
 
-    int particulas = 4500;
-
-    while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_part, portMAX_DELAY);
 
@@ -385,30 +359,22 @@ void GeradorParticulas() {
         else
             particulas = 4501 + (rand() % 1500);
 
-        arqDadoParticulas = fopen("Dados/Particulas.txt", "w");
-        fprintf(arqDadoParticulas, "%d", particulas);
-        fclose(arqDadoParticulas);
-
         xSemaphoreGive(xMutex_part);
-        vTaskDelay(1900);
-    }
 }
 
 void ModuloSensorParticulasTask() {
 
-    int sucesso, particulas, defeito;
+    int defeito;
 
     while (1) {
 
+        xTaskHandle GP;
+        xTaskCreate(GeradorParticulas, (signed char*)"Gerador de Particulas", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &GP);
+
         xSemaphoreTake(xMutex_part, portMAX_DELAY);
 
-        printf("Sensoriando a quantidade de partículas...\n");
-        // tempo de execucao = 20ms
+        printf("Sensoriando a quantidade de particulas...\n");
         // Alteracao de variavel que será: 1 - Defeito na autolimpeza e 0 - Nao Defeito
-
-        arqDadoParticulas = fopen("Dados/Particulas.txt", "r");
-        sucesso = fscanf(arqDadoParticulas, "%d", &particulas);
-        fclose(arqDadoParticulas);
 
         if (particulas <= 4500)
             defeito = 0;
@@ -417,16 +383,15 @@ void ModuloSensorParticulasTask() {
 
         Buffer_part = defeito;
 
+        printf("Quantidade de particulas: %d Defeito: %d\n\n", particulas, defeito);
+
         xSemaphoreGive(xMutex_part);
         vTaskDelay(2000);
     }
 }
 
 void GeradorPresencaGas() {
-    
-    int presencaGas;
 
-    while (1) {
         srand(time(NULL));
         xSemaphoreTake(xMutex_gas, portMAX_DELAY);
 
@@ -437,33 +402,24 @@ void GeradorPresencaGas() {
         else
             presencaGas = 1;
 
-        arqDadoGas = fopen("Dados/Gas.txt", "w");
-        fprintf(arqDadoGas, "%d", presencaGas);
-        fclose(arqDadoGas);
-
         xSemaphoreGive(xMutex_gas);
-        vTaskDelay(1900);
-    }
 }
 
 void ModuloSensorPresencaGasRefrigeranteTask() {
 
-    int sucesso;
-    int pres_gas;
-
     while (1) {
+
+        xTaskHandle GPG;
+        xTaskCreate(GeradorPresencaGas, (signed char*)"Gerador de Presenca de Gas", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &GPG);
 
         xSemaphoreTake(xMutex_gas, portMAX_DELAY);
 
         printf("Sensoriando presenca de gas refrigerante...\n");
-        // Tempo de execucao = 20ms
         // Alteracao de variavel que será: 1 - Presenca de gas e 0 - Nao Presenca de Gas
 
-        arqDadoGas = fopen("Dados/Gas.txt", "r");
-        sucesso = fscanf(arqDadoGas, "%d", &pres_gas);
-        fclose(arqDadoGas);
+        Buffer_gas = presencaGas;
 
-        Buffer_gas = pres_gas;
+        printf("Gas Refrigerante no ambiente: %d\n\n", presencaGas);
 
         xSemaphoreGive(xMutex_gas);
         vTaskDelay(2000);
@@ -516,6 +472,16 @@ int main(void)
      * See http://www.FreeRTOS.org/trace for more information. */
 
     vTraceEnable(TRC_START);
+
+    xMutex_pres = xSemaphoreCreateMutex();
+    xMutex_temp = xSemaphoreCreateMutex();
+    xMutex_gas = xSemaphoreCreateMutex();
+    xMutex_tensao = xSemaphoreCreateMutex();
+    xMutex_part = xSemaphoreCreateMutex();
+
+    index_pres = 0;
+    index_temp = 0;
+
     xTaskHandle HT1;
     xTaskHandle HT2;
     xTaskHandle HT3;
@@ -528,7 +494,7 @@ int main(void)
     xTaskCreate(ModuloMedidorTensaoTask, (signed char*)"MedidorTensaoTask", configMINIMAL_STACK_SIZE, (void*)NULL, 3, &HT3);
     xTaskCreate(ModuloSensorParticulasTask, (signed char*)"SensorParticulasTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT4);
     xTaskCreate(ModuloSensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT5);
-
+    
     // Ver questão do Deferrable Server para tarefas aperiódicas
 
     /* start the scheduler */
