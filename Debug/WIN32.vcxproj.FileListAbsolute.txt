@@ -1,2 +1,0 @@
-C:\Users\anari\Downloads\FreeRTOSv202212.00\FreeRTOS\Demo\WIN32-MSVC\Debug\RTOSDemo.exe
-C:\Users\anari\OneDrive\Graduação\10º (9º) Período 2022.1\Sistemas em Tempo Real\FreeRTOSv202212.00\FreeRTOS\Demo\WIN32-MSVC\Debug\RTOSDemo.exe
