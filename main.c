@@ -486,7 +486,7 @@ void NotificarDispositivoMovelTask() {
     }
 }
 
-void BackgroundServerTask() {
+void PoolingServerTask() {
     while (1) {
         if (Buffer_pres[0] == 0 && Buffer_pres[1] == 1) {
             xTaskHandle T6;
@@ -553,7 +553,7 @@ int main(void)
     xTaskCreate(ModuloSensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT5);
     
     // Ver questão do Deferrable Server para tarefas aperiódicas
-    xTaskCreate(BackgroundServerTask, (signed char*)"BackgroundServerTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT6);
+    //xTaskCreate(PoolingServerTask, (signed char*)"BackgroundServerTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT6);
 
     /* start the scheduler */
     vTaskStartScheduler();
