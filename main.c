@@ -178,17 +178,18 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 
 /*-----------------------------------------------------------*/
 
-int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part, Buffer_tensao_vento, Buffer_tensao_comp;
+int Buffer_temp[2], Buffer_pres[2];
+boolean Buffer_gas, Buffer_part, Buffer_tensao_vento, Buffer_tensao_comp;
 int index_temp, index_pres;
 SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part, xMutex_tensao;
 
 int cont = 0, fluxo;
-int temp_medida;
+int temp_medida = 25;
 int tensoes[2] = { 220, 220 };
 int particulas = 4500;
-int presencaGas;
+boolean presencaGas;
 
-int arCondicionadoLigado;
+boolean arCondicionadoLigado;
 int defeitoTarefa = 0;
 
 void GeradorFluxoPessoas() {
@@ -318,7 +319,7 @@ void GeradorTensao() {
 
 void ModuloMedidorTensaoTask() {
 
-   int defeitos[2];
+    boolean defeitos[2] = {0, 0};
 
    while (1) {
        
@@ -333,15 +334,17 @@ void ModuloMedidorTensaoTask() {
         for (int i = 0; i < 2; i++) {
             if (tensoes[i] < 200)
                 defeitos[i] = 1;
-            else
+            else {
                 defeitos[i] = 0;
+                defeitoTarefa = 3;
+            }
         }
 
         Buffer_tensao_vento = defeitos[0];
         Buffer_tensao_comp = defeitos[1];
 
-        printf("Tensao no Ventoinha: %d Defeito: %d\n", tensoes[0], defeitos[0]);
-        printf("Tensao no Compressor: %d Defeito: %d\n\n", tensoes[1], defeitos[1]);
+        printf("Tensao na Ventoinha: %dV Defeito: %d\n", tensoes[0], defeitos[0]);
+        printf("Tensao no Compressor: %dV Defeito: %d\n\n", tensoes[1], defeitos[1]);
 
         xSemaphoreGive(xMutex_tensao);
         vTaskDelay(2000);
@@ -365,7 +368,7 @@ void GeradorParticulas() {
 
 void ModuloSensorParticulasTask() {
 
-    int defeito;
+    boolean defeito;
 
     while (1) {
 
@@ -379,8 +382,10 @@ void ModuloSensorParticulasTask() {
 
         if (particulas <= 4500)
             defeito = 0;
-        else
+        else {
             defeito = 1;
+            defeitoTarefa = 4;
+        }
 
         Buffer_part = defeito;
 
@@ -420,6 +425,10 @@ void ModuloSensorPresencaGasRefrigeranteTask() {
 
         Buffer_gas = presencaGas;
 
+        if (Buffer_gas) {
+            defeitoTarefa = 5;
+        }
+
         printf("Gas Refrigerante no ambiente: %d\n\n", presencaGas);
 
         xSemaphoreGive(xMutex_gas);
@@ -451,25 +460,22 @@ void DesligarArCondicionadoTask() {
 }
 
 void NotificarDispositivoMovelTask() {
-    printf("Notificando usuário...\n\n");
+    printf("Notificando usuario...\n\n");
     // Tempo de execucao = 15ms
     // Deadline = 250ms
     // Acionado quando uma das tarefas T3, T4 ou T5 tiver retorno = 1
     switch (defeitoTarefa) {
     case 3:
-        printf("**********************************************************\n");
-        printf("Foi verificado um problema elétrico no seu ar condicionado.\nDesligue-o e contate o Suporte Técnico.");
-        printf("**********************************************************\n");
+        printf("Foi verificado um problema eletrico no seu ar condicionado.\nDesligue-o e contate o Suporte Tecnico.\n\n");
+        defeitoTarefa = 0;
         break;
     case 4:
-        printf("**********************************************************************************\n");
-        printf("Foi verificada uma possível falha no sistema de autolimpeza de seu ar condicionado.\nContate o Suporte Técnico");
-        printf("**********************************************************************************\n");
+        printf("Foi verificada uma possivel falha no sistema de autolimpeza de seu ar condicionado.\nContate o Suporte Tecnico\n\n");
+        defeitoTarefa = 0;
         break;
     case 5:
-        printf("********************************************************\n");
-        printf("Foi verificada presença de gás refrigerante no ambiente.\nContate o Suporte Técnico");
-        printf("********************************************************\n");
+        printf("Foi verificada presença de gas refrigerante no ambiente.\nContate o Suporte Tecnico\n\n");
+        defeitoTarefa = 0;
         break;
     default:
         break;
@@ -482,27 +488,28 @@ void BackgroundServerTask() {
             xTaskHandle T6;
             xTaskCreate(LigarArCondicionadoTask, (signed char*)"Ligar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T6);
         }
-        else if (Buffer_pres[0] == 1 && Buffer_pres[1] == 0) {
-            xTaskHandle T8;
-            xTaskCreate(DesligarArCondicionadoTask, (signed char*)"Desligar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T8);
-        }
 
         if (arCondicionadoLigado) {
             boolean mudancaTemp = Buffer_temp[0] != Buffer_temp[1];
             boolean mudancaPres = Buffer_pres[0] != Buffer_pres[1];
             boolean defeito = Buffer_gas || Buffer_part || Buffer_tensao_vento || Buffer_tensao_comp;
 
-            if (mudancaTemp || mudancaPres) {
-                xTaskHandle T7;
-                xTaskCreate(ControlarTemperaturaTask, (signed char*)"Controlar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T7);
+            if (Buffer_pres[0] == 1 && Buffer_pres[1] == 0) {
+                xTaskHandle T8;
+                xTaskCreate(DesligarArCondicionadoTask, (signed char*)"Desligar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T8);
             }
-
-            if (defeito) {
-                xTaskHandle T9;
-                xTaskCreate(NotificarDispositivoMovelTask, (signed char*)"Notificar Dispositivo Movel", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T9);
+            else {
+                if (mudancaTemp || mudancaPres) {
+                    xTaskHandle T7;
+                    xTaskCreate(ControlarTemperaturaTask, (signed char*)"Controlar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T7);
+                }
+                if (defeito) {
+                    xTaskHandle T9;
+                    xTaskCreate(NotificarDispositivoMovelTask, (signed char*)"Notificar Dispositivo Movel", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T9);
+                }
             }
         }
-        vTaskDelay(300);
+        vTaskDelay(200);
     }
 }
 
