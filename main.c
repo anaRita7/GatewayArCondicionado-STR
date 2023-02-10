@@ -468,14 +468,18 @@ void NotificarDispositivoMovelTask() {
     case 3:
         printf("Foi verificado um problema eletrico no seu ar condicionado.\nDesligue-o e contate o Suporte Tecnico.\n\n");
         defeitoTarefa = 0;
+        Buffer_tensao_comp = 0;
+        Buffer_tensao_vento = 0;
         break;
     case 4:
         printf("Foi verificada uma possivel falha no sistema de autolimpeza de seu ar condicionado.\nContate o Suporte Tecnico\n\n");
         defeitoTarefa = 0;
+        Buffer_part = 0;
         break;
     case 5:
         printf("Foi verificada presenca de gas refrigerante no ambiente.\nContate o Suporte Tecnico\n\n");
         defeitoTarefa = 0;
+        Buffer_gas = 0;
         break;
     default:
         break;
