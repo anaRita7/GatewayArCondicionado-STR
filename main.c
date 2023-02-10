@@ -474,7 +474,7 @@ void NotificarDispositivoMovelTask() {
         defeitoTarefa = 0;
         break;
     case 5:
-        printf("Foi verificada presença de gas refrigerante no ambiente.\nContate o Suporte Tecnico\n\n");
+        printf("Foi verificada presenca de gas refrigerante no ambiente.\nContate o Suporte Tecnico\n\n");
         defeitoTarefa = 0;
         break;
     default:
