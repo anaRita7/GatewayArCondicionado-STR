@@ -181,18 +181,15 @@ static int xKeyPressed = mainNO_KEY_PRESS_VALUE;
 int Buffer_temp[2], Buffer_pres[2], Buffer_gas, Buffer_part, Buffer_tensao_vento, Buffer_tensao_comp;
 int index_temp, index_pres;
 SemaphoreHandle_t xMutex_temp, xMutex_pres, xMutex_gas, xMutex_part, xMutex_tensao;
-FILE* arqDadoTemperatura = NULL;
-FILE* arqDadoPresenca = NULL;
-FILE* arqDadoGas = NULL;
-FILE* arqDadoParticulas = NULL;
-FILE* arqDadoTensaoVentoinha = NULL;
-FILE* arqDadoTensaoCompressor = NULL;
 
 int cont = 0, fluxo;
 int temp_medida;
 int tensoes[2] = { 220, 220 };
 int particulas = 4500;
 int presencaGas;
+
+int arCondicionadoLigado;
+int defeitoTarefa = 0;
 
 void GeradorFluxoPessoas() {
 
@@ -233,8 +230,10 @@ void ModuloDetectorPresencaTask() {
 
         qtde_pessoas += fluxo;
 
-        if (index_pres == 2)
-            index_pres = 0;
+        if (index_pres == 2) {
+            index_pres = 1;
+            Buffer_pres[0] = Buffer_pres[1];
+        }
         
         Buffer_pres[index_pres] = qtde_pessoas;
         index_pres++;
@@ -277,8 +276,10 @@ void ModuloSensorTemperaturaTask() {
         printf("Medindo a temperatura...\n");
         // alteracao de uma variavel que indica a temperatura do ambiente
 
-        if (index_temp == 2)
-            index_temp = 0;
+        if (index_temp == 2) {
+            index_temp = 1;
+            Buffer_temp[0] = Buffer_temp[1];
+        }
         
         Buffer_temp[index_temp] = temp_medida;
         index_temp++;
@@ -427,38 +428,82 @@ void ModuloSensorPresencaGasRefrigeranteTask() {
 }
 
 void LigarArCondicionadoTask() {
-    printf("Ligando o ar Condicionado...\n");
+    printf("Ligando o ar Condicionado...\n\n");
+    arCondicionadoLigado = 1;
     // Tempo de execucao = 40ms
     // Deadline = 500ms
     // Acionado quando variavel de numero de pessoas variar de 0 para 1
 }
 
 void ControlarTemperaturaTask() {
-    printf("Mudando Temperatura do Ar Condicionado...\n");
+    printf("Mudando Temperatura do Ar Condicionado...\n\n");
     // Tempo de execucao = 30ms
     // Deadline = 250ms
     // Acionado quando variavel de numero de pessoas ou a temperatura do ambiente variarem
 }
 
-void ControlarFluxoArTask() {
-    printf("Mudando Direcao do Fluxo de Ar...\n");
-    // Tempo de execucao = 30ms
-    // Deadline = 250ms
-    // Acionado quando variavel de numero de pessoas variar
-}
-
 void DesligarArCondicionadoTask() {
-    printf("Desligando o ar Condicionado...\n");
+    printf("Desligando o ar Condicionado...\n\n");
+    arCondicionadoLigado = 0;
     // Tempo de execucao = 40ms
     // Deadline = 500ms
     // Acionado quando variavel de numero de pessoas variar para 0
 }
 
 void NotificarDispositivoMovelTask() {
-    printf("Desligando o ar Condicionado...\n");
+    printf("Notificando usuário...\n\n");
     // Tempo de execucao = 15ms
     // Deadline = 250ms
     // Acionado quando uma das tarefas T3, T4 ou T5 tiver retorno = 1
+    switch (defeitoTarefa) {
+    case 3:
+        printf("**********************************************************\n");
+        printf("Foi verificado um problema elétrico no seu ar condicionado.\nDesligue-o e contate o Suporte Técnico.");
+        printf("**********************************************************\n");
+        break;
+    case 4:
+        printf("**********************************************************************************\n");
+        printf("Foi verificada uma possível falha no sistema de autolimpeza de seu ar condicionado.\nContate o Suporte Técnico");
+        printf("**********************************************************************************\n");
+        break;
+    case 5:
+        printf("********************************************************\n");
+        printf("Foi verificada presença de gás refrigerante no ambiente.\nContate o Suporte Técnico");
+        printf("********************************************************\n");
+        break;
+    default:
+        break;
+    }
+}
+
+void BackgroundServerTask() {
+    while (1) {
+        if (Buffer_pres[0] == 0 && Buffer_pres[1] == 1) {
+            xTaskHandle T6;
+            xTaskCreate(LigarArCondicionadoTask, (signed char*)"Ligar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T6);
+        }
+        else if (Buffer_pres[0] == 1 && Buffer_pres[1] == 0) {
+            xTaskHandle T8;
+            xTaskCreate(DesligarArCondicionadoTask, (signed char*)"Desligar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T8);
+        }
+
+        if (arCondicionadoLigado) {
+            boolean mudancaTemp = Buffer_temp[0] != Buffer_temp[1];
+            boolean mudancaPres = Buffer_pres[0] != Buffer_pres[1];
+            boolean defeito = Buffer_gas || Buffer_part || Buffer_tensao_vento || Buffer_tensao_comp;
+
+            if (mudancaTemp || mudancaPres) {
+                xTaskHandle T7;
+                xTaskCreate(ControlarTemperaturaTask, (signed char*)"Controlar Ar Condicionado", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T7);
+            }
+
+            if (defeito) {
+                xTaskHandle T9;
+                xTaskCreate(NotificarDispositivoMovelTask, (signed char*)"Notificar Dispositivo Movel", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &T9);
+            }
+        }
+        vTaskDelay(300);
+    }
 }
 
 int main(void)
@@ -487,18 +532,22 @@ int main(void)
     xTaskHandle HT3;
     xTaskHandle HT4;
     xTaskHandle HT5;
+    xTaskHandle HT6;
 
     /* create task */
-    xTaskCreate(ModuloDetectorPresencaTask, (signed char*)"DetectorPresencaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 5, &HT1);
-    xTaskCreate(ModuloSensorTemperaturaTask, (signed char*)"SensorTemperaturaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 4, &HT2);
-    xTaskCreate(ModuloMedidorTensaoTask, (signed char*)"MedidorTensaoTask", configMINIMAL_STACK_SIZE, (void*)NULL, 3, &HT3);
-    xTaskCreate(ModuloSensorParticulasTask, (signed char*)"SensorParticulasTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT4);
-    xTaskCreate(ModuloSensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT5);
+    xTaskCreate(ModuloDetectorPresencaTask, (signed char*)"DetectorPresencaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 6, &HT1);
+    xTaskCreate(ModuloSensorTemperaturaTask, (signed char*)"SensorTemperaturaTask", configMINIMAL_STACK_SIZE, (void*)NULL, 5, &HT2);
+    xTaskCreate(ModuloMedidorTensaoTask, (signed char*)"MedidorTensaoTask", configMINIMAL_STACK_SIZE, (void*)NULL, 4, &HT3);
+    xTaskCreate(ModuloSensorParticulasTask, (signed char*)"SensorParticulasTask", configMINIMAL_STACK_SIZE, (void*)NULL, 3, &HT4);
+    xTaskCreate(ModuloSensorPresencaGasRefrigeranteTask, (signed char*)"SensorPresencaGasRefrigeranteTask", configMINIMAL_STACK_SIZE, (void*)NULL, 2, &HT5);
     
     // Ver questão do Deferrable Server para tarefas aperiódicas
+    xTaskCreate(BackgroundServerTask, (signed char*)"BackgroundServerTask", configMINIMAL_STACK_SIZE, (void*)NULL, 1, &HT6);
 
     /* start the scheduler */
     vTaskStartScheduler();
+
+    for (;;);
 
     return 0;
 }
